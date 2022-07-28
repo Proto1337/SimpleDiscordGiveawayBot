@@ -36,6 +36,7 @@ async def getawinner(
     ctx,
     noofwinners: Option(int, "Number of winners", min_value=1)
 ):
+    await ctx.defer(ephemeral=True)
     # load local JSON database :: all participants
     with open("participants.json", 'r') as f:
         data = json.load(f)
@@ -77,13 +78,14 @@ class Teilnehmen(View):
     # Button
     @discord.ui.button(label="Teilnehmen", style=discord.ButtonStyle.green)
     async def button_callback(self, button, interaction):
+        await interaction.response.defer(ephemeral=True)
         with open("participants.json", 'r') as f:
             data = json.load(f)
 
         # if user in database, end
         if str(interaction.user.id) in data.__str__():
             # "You already participated!"
-            await interaction.response.send_message("Du hast bereits teilgenommen!", ephemeral=True)
+            await interaction.followup.send("Du hast bereits teilgenommen!", ephemeral=True)
             return
 
         participants = data["participants"]
@@ -96,7 +98,7 @@ class Teilnehmen(View):
             json.dump(data, f)
 
         # participated successfully
-        await interaction.response.send_message(content="Du bist nun eingetragen!", ephemeral=True)
+        await interaction.followup.send(content="Du bist nun eingetragen!", ephemeral=True)
 
     async def on_timeout(self):
         pass
