@@ -27,13 +27,13 @@ admin = SERVER.ADMINROLE
 
 @bot.listen()
 async def on_ready():
-    print(f"Bot ist online als {bot.user}.")
+    print(f"Bot online as {bot.user}.")
 
 # Get winners
 @bot.slash_command(name="getawinner", guild_ids=[guild], description="Roll the dice. Get a winner.")
-@discord.ext.commands.has_role(admin)
+@commands.has_role(admin)
 async def getawinner(
-    ctx,
+    ctx: discord.ApplicationContext,
     noofwinners: Option(int, "Number of winners", min_value=1)
 ):
     await ctx.defer(ephemeral=True)
@@ -54,8 +54,7 @@ async def getawinner(
         except(KeyError):
             # Check if selected number of winners is valid
             if noofwinners > len(l):
-                # Number for count of winners is higher than number of participants
-                await ctx.respond("Es gibt weniger qualifizierte Teilnehmer als ausgewählte Gewinner. Probiere es erneut.", ephemeral=True)
+                await ctx.respond("Number for count of winners is higher than number of participants. Try again.", ephemeral=True)
                 return
 
             await ctx.respond("Ended", ephemeral=True)
@@ -66,26 +65,25 @@ async def getawinner(
                 winner = secrets.randbelow(len(l))
 
                 # The winner is
-                await ctx.channel.send(f"Gewonnen hat <@{l[winner-1]}>")
+                await ctx.channel.send(f"The winner is <@{l[winner-1]}>!")
             return
 
 # Sub Class of View to participate
-class Teilnehmen(View):
+class Participate(View):
     def __init__(self, ctx):
         super().__init__(timeout=None)
         self.ctx = ctx
 
     # Button
-    @discord.ui.button(label="Teilnehmen", style=discord.ButtonStyle.green)
-    async def button_callback(self, button, interaction):
+    @discord.ui.button(label="Participate", style=discord.ButtonStyle.green)
+    async def button_callback(self, _, interaction):
         await interaction.response.defer(ephemeral=True)
         with open("participants.json", 'r') as f:
             data = json.load(f)
 
-        # if user in database, end
+        # if user in json, end
         if str(interaction.user.id) in data.__str__():
-            # "You already participated!"
-            await interaction.followup.send("Du hast bereits teilgenommen!", ephemeral=True)
+            await interaction.followup.send("You have already participated!", ephemeral=True)
             return
 
         participants = data["participants"]
@@ -98,17 +96,17 @@ class Teilnehmen(View):
             json.dump(data, f)
 
         # participated successfully
-        await interaction.followup.send(content="Du bist nun eingetragen!", ephemeral=True)
+        await interaction.followup.send(content="You have successfully registered!", ephemeral=True)
 
     async def on_timeout(self):
         pass
 
 @bot.slash_command(name="createbutton", guild_ids=[guild], description="Create the giveaway button.")
-@discord.ext.commands.has_role(admin)
-async def createbutton(ctx):
-    view = Teilnehmen(ctx)
-    await ctx.channel.send(content="Klicke den Button an, damit du am Giveaway teilnimmst.", view=view)
-    await ctx.respond("Button ist da", ephemeral=True)
+@commands.has_role(admin)
+async def createbutton(ctx: discord.ApplicationContext):
+    view = Participate(ctx)
+    await ctx.channel.send(content="Click the button to participate in the giveaway.", view=view)
+    await ctx.respond("Button has been created successfully.", ephemeral=True)
 
 # Load token from TOKEN.py in folder SECRET/
 bot.run(TOKEN.TOKEN)
